@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X Engagement Dashboard - Pre-Post Tweet Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .input-section {
+            margin-bottom: 25px;
+        }
+
+        .input-section label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        #tweetText {
+            width: 100%;
+            min-height: 120px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        #tweetText:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .char-counter {
+            text-align: right;
+            margin-top: 5px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .char-counter.warning {
+            color: #ff9800;
+            font-weight: 600;
+        }
+
+        .char-counter.error {
+            color: #f44336;
+            font-weight: 600;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .option-group label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .analyze-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .analyze-btn:active {
+            transform: translateY(0);
+        }
+
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .score-header {
+            text-align: center;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .score-header.low {
+            background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+            color: white;
+        }
+
+        .score-header.medium {
+            background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);
+            color: white;
+        }
+
+        .score-header.high {
+            background: linear-gradient(135deg, #ff5722 0%, #ff7043 100%);
+            color: white;
+        }
+
+        .score-header.critical {
+            background: linear-gradient(135deg, #f44336 0%, #e57373 100%);
+            color: white;
+        }
+
+        .overall-score {
+            font-size: 4em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .risk-level {
+            font-size: 1.5em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .score-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .score-card {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .score-card h3 {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .score-card .score {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .penalty-item, .boost-item, .warning-item, .recommendation-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+
+        .penalty-item {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+
+        .penalty-item.critical {
+            background: #d32f2f;
+            color: white;
+            border-left-color: #b71c1c;
+        }
+
+        .penalty-item.high {
+            background: #ffcdd2;
+            border-left-color: #f44336;
+        }
+
+        .penalty-item.medium {
+            background: #fff3e0;
+            border-left-color: #ff9800;
+        }
+
+        .boost-item {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+
+        .warning-item {
+            background: #fff3e0;
+            border-left-color: #ff9800;
+        }
+
+        .recommendation-item {
+            background: #e3f2fd;
+            border-left-color: #2196f3;
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .item-title {
+            font-weight: 600;
+        }
+
+        .item-impact {
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        .item-description {
+            font-size: 0.95em;
+            margin-top: 5px;
+        }
+
+        .item-details {
+            font-size: 0.85em;
+            opacity: 0.8;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .feature-item {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .feature-label {
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .feature-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            opacity: 0.8;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ X Engagement Dashboard</h1>
+            <p>Pre-evaluate your tweets before posting using X's open-sourced algorithm</p>
+        </div>
+
+        <div class="main-card">
+            <div class="input-section">
+                <label for="tweetText">Your Tweet:</label>
+                <textarea
+                    id="tweetText"
+                    placeholder="Type your tweet here..."
+                    maxlength="280"
+                ></textarea>
+                <div class="char-counter" id="charCounter">0 / 280</div>
+            </div>
+
+            <div class="options-grid">
+                <div class="option-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="hasMedia">
+                        <label for="hasMedia">Has Media</label>
+                    </div>
+                </div>
+
+                <div class="option-group">
+                    <label for="mediaType">Media Type:</label>
+                    <select id="mediaType" disabled>
+                        <option value="">None</option>
+                        <option value="image">Image</option>
+                        <option value="video">Video</option>
+                        <option value="gif">GIF</option>
+                    </select>
+                </div>
+
+                <div class="option-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="isReply">
+                        <label for="isReply">Is Reply</label>
+                    </div>
+                </div>
+            </div>
+
+            <button class="analyze-btn" onclick="analyzeTweet()">
+                🚀 Analyze Tweet
+            </button>
+
+            <div class="results" id="results">
+                <!-- Results will be inserted here -->
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Based on <a href="https://github.com/twitter/the-algorithm" target="_blank">X's Open-Sourced Algorithm</a></p>
+            <p>Created for educational and entertainment purposes</p>
+        </div>
+    </div>
+
+    <script>
+        // Character counter
+        const tweetText = document.getElementById('tweetText');
+        const charCounter = document.getElementById('charCounter');
+
+        tweetText.addEventListener('input', () => {
+            const length = tweetText.value.length;
+            charCounter.textContent = `${length} / 280`;
+
+            if (length >= 280) {
+                charCounter.classList.add('error');
+                charCounter.classList.remove('warning');
+            } else if (length >= 240) {
+                charCounter.classList.add('warning');
+                charCounter.classList.remove('error');
+            } else {
+                charCounter.classList.remove('warning', 'error');
+            }
+        });
+
+        // Media type enabler
+        const hasMedia = document.getElementById('hasMedia');
+        const mediaType = document.getElementById('mediaType');
+
+        hasMedia.addEventListener('change', () => {
+            mediaType.disabled = !hasMedia.checked;
+            if (!hasMedia.checked) {
+                mediaType.value = '';
+            }
+        });
+
+        // Analysis engine (JavaScript port of Python analyzer)
+        class EngagementAnalyzer {
+            constructor() {
+                this.TOXIC_PATTERNS = [
+                    /\b(hate|stupid|idiot|dumb|trash|garbage|worst)\b/gi,
+                    /\b(kill|die|death|hurt)\s+(you|yourself|them)/gi,
+                    /\b(f\*ck|sh\*t|damn|hell)\s+(you|off)/gi,
+                    /\b(loser|pathetic|disgusting|horrible)\b/gi,
+                ];
+
+                this.SPAM_PATTERNS = [
+                    /(click here|follow for follow|f4f|l4l)/gi,
+                    /(buy now|limited time|act now|offer expires)/gi,
+                    /(make \$\d+|earn money fast|work from home)/gi,
+                    /(crypto|bitcoin|nft).*(guaranteed|profit|returns)/gi,
+                    /(dm for|check bio|link in bio).*(\$|money|cash|paid)/gi,
+                ];
+
+                this.NSFW_PATTERNS = [
+                    /\b(sex|porn|xxx|nsfw|nude|naked)\b/gi,
+                    /\b(sexual|explicit|adult content)\b/gi,
+                ];
+
+                this.SUSPICIOUS_DOMAINS = ['bit.ly', 'tinyurl.com', 'shorturl.at', 'click', 'offer', 'promo', 'deals'];
+
+                this.OPTIMAL_LENGTH_MIN = 50;
+                this.OPTIMAL_LENGTH_MAX = 280;
+                this.SWEET_SPOT_MIN = 100;
+                this.SWEET_SPOT_MAX = 200;
+                this.MAX_CAPS_RATIO = 0.3;
+                this.RECOMMENDED_CAPS_RATIO = 0.1;
+            }
+
+            analyze(text, hasMedia, mediaType, isReply) {
+                const features = this.extractFeatures(text, hasMedia, mediaType, isReply);
+                const [safetyScore, safetyWarnings, safetyPenalties] = this.analyzeSafety(text, features);
+                const [qualityScore, qualityWarnings, qualityPenalties] = this.analyzeQuality(features);
+                const [engagementScore, engagementBoosts] = this.analyzeEngagementPotential(features);
+
+                const overallScore = this.calculateOverallScore(safetyScore, qualityScore, engagementScore, features);
+                const riskLevel = this.determineRiskLevel(overallScore, safetyScore, safetyPenalties);
+
+                const allWarnings = [...safetyWarnings, ...qualityWarnings];
+                const allPenalties = [...safetyPenalties, ...qualityPenalties];
+                const recommendations = this.generateRecommendations(
+                    features, safetyScore, qualityScore, engagementScore, safetyPenalties, qualityPenalties
+                );
+
+                return {
+                    overallScore: Math.round(overallScore * 10) / 10,
+                    riskLevel,
+                    safetyScore: Math.round(safetyScore * 10) / 10,
+                    qualityScore: Math.round(qualityScore * 10) / 10,
+                    engagementPotential: Math.round(engagementScore * 10) / 10,
+                    penalties: allPenalties,
+                    boosts: engagementBoosts,
+                    warnings: allWarnings,
+                    recommendations,
+                    featureBreakdown: features
+                };
+            }
+
+            extractFeatures(text, hasMedia, mediaType, isReply) {
+                const textLength = text.length;
+                const charCount = text.replace(/\s/g, '').length;
+                const upperCount = (text.match(/[A-Z]/g) || []).length;
+                const capsRatio = charCount > 0 ? upperCount / charCount : 0;
+                const whitespaceCount = (text.match(/\s/g) || []).length;
+                const newlineCount = (text.match(/\n/g) || []).length;
+                const questionCount = (text.match(/\?/g) || []).length;
+                const hasQuestion = text.includes('?');
+
+                const urlPattern = /https?:\/\/[^\s]+/g;
+                const urls = text.match(urlPattern) || [];
+                const urlCount = urls.length;
+
+                const mentions = text.match(/@\w+/g) || [];
+                const hashtags = text.match(/#\w+/g) || [];
+
+                const suspiciousUrls = urls.filter(url => {
+                    try {
+                        const domain = new URL(url).hostname.toLowerCase();
+                        return this.SUSPICIOUS_DOMAINS.some(sus => domain.includes(sus));
+                    } catch {
+                        return true;
+                    }
+                });
+
+                return {
+                    textLength,
+                    charCount,
+                    capsRatio,
+                    upperCount,
+                    whitespaceCount,
+                    newlineCount,
+                    hasQuestion,
+                    questionCount,
+                    urls,
+                    urlCount,
+                    suspiciousUrls,
+                    mentions,
+                    mentionCount: mentions.length,
+                    hashtags,
+                    hashtagCount: hashtags.length,
+                    hasMedia,
+                    mediaType,
+                    isReply
+                };
+            }
+
+            analyzeSafety(text, features) {
+                let score = 100;
+                const warnings = [];
+                const penalties = [];
+
+                // Toxicity check
+                let toxicMatches = [];
+                this.TOXIC_PATTERNS.forEach(pattern => {
+                    const matches = text.match(pattern);
+                    if (matches) toxicMatches.push(...matches);
+                });
+
+                if (toxicMatches.length > 0) {
+                    const penaltySeverity = Math.min(toxicMatches.length * 15, 60);
+                    score -= penaltySeverity;
+                    penalties.push({
+                        type: 'HIGH_TOXICITY',
+                        severity: penaltySeverity > 40 ? 'CRITICAL' : 'HIGH',
+                        impact: `-${penaltySeverity}%`,
+                        description: `Toxic language detected: ${toxicMatches.length} pattern(s)`,
+                        details: `Matched: ${[...new Set(toxicMatches.slice(0, 3))].join(', ')}...`
+                    });
+                    warnings.push('🚨 CRITICAL: Toxic language detected - may be filtered or downranked to "Abusive Quality" section');
+                }
+
+                // Spam check
+                let spamMatches = [];
+                this.SPAM_PATTERNS.forEach(pattern => {
+                    const matches = text.match(pattern);
+                    if (matches) spamMatches.push(...matches);
+                });
+
+                if (spamMatches.length > 0) {
+                    const penaltySeverity = Math.min(spamMatches.length * 20, 70);
+                    score -= penaltySeverity;
+                    penalties.push({
+                        type: 'HIGH_SPAMMY_CONTENT',
+                        severity: penaltySeverity > 50 ? 'CRITICAL' : 'HIGH',
+                        impact: `-${penaltySeverity}%`,
+                        description: `Spam patterns detected: ${spamMatches.length} indicator(s)`,
+                        details: `Matched: ${[...new Set(spamMatches.slice(0, 3))].join(', ')}...`
+                    });
+                    warnings.push('🚨 CRITICAL: Spam indicators detected - may trigger GrokSpamFilter (hard filter)');
+                }
+
+                // NSFW check
+                let nsfwMatches = [];
+                this.NSFW_PATTERNS.forEach(pattern => {
+                    const matches = text.match(pattern);
+                    if (matches) nsfwMatches.push(...matches);
+                });
+
+                if (nsfwMatches.length > 0) {
+                    const penaltySeverity = 50;
+                    score -= penaltySeverity;
+                    penalties.push({
+                        type: 'NSFW_CONTENT',
+                        severity: 'CRITICAL',
+                        impact: `-${penaltySeverity}%`,
+                        description: 'NSFW content detected',
+                        details: `Matched: ${[...new Set(nsfwMatches.slice(0, 3))].join(', ')}...`
+                    });
+                    warnings.push('🚨 CRITICAL: NSFW content detected - may trigger GrokNsfwFilter (hard filter)');
+                }
+
+                // Suspicious URLs
+                if (features.suspiciousUrls.length > 0) {
+                    const penaltySeverity = 40;
+                    score -= penaltySeverity;
+                    penalties.push({
+                        type: 'UNTRUSTED_URL',
+                        severity: 'HIGH',
+                        impact: `-${penaltySeverity}%`,
+                        description: `Suspicious URLs detected: ${features.suspiciousUrls.length}`,
+                        details: `URLs: ${features.suspiciousUrls.slice(0, 2).join(', ')}`
+                    });
+                    warnings.push('⚠️ HIGH: Suspicious URLs may trigger "Abusive Quality" downranking');
+                }
+
+                return [Math.max(score, 0), warnings, penalties];
+            }
+
+            analyzeQuality(features) {
+                let score = 100;
+                const warnings = [];
+                const penalties = [];
+
+                // Length analysis
+                if (features.textLength < 10) {
+                    const penalty = 30;
+                    score -= penalty;
+                    penalties.push({
+                        type: 'TOO_SHORT',
+                        severity: 'MEDIUM',
+                        impact: `-${penalty}%`,
+                        description: `Tweet too short (${features.textLength} chars)`,
+                        details: 'Very short tweets get less engagement'
+                    });
+                    warnings.push(`⚠️ Tweet too short (${features.textLength} chars) - low engagement expected`);
+                } else if (features.textLength < this.OPTIMAL_LENGTH_MIN) {
+                    const penalty = 10;
+                    score -= penalty;
+                    penalties.push({
+                        type: 'BELOW_OPTIMAL',
+                        severity: 'LOW',
+                        impact: `-${penalty}%`,
+                        description: `Below optimal length (${features.textLength} chars)`,
+                        details: `Aim for ${this.OPTIMAL_LENGTH_MIN}-${this.OPTIMAL_LENGTH_MAX} chars`
+                    });
+                }
+
+                // Caps analysis
+                if (features.capsRatio > 0.5) {
+                    const penalty = 40;
+                    score -= penalty;
+                    penalties.push({
+                        type: 'EXCESSIVE_CAPS',
+                        severity: 'HIGH',
+                        impact: `-${penalty}%`,
+                        description: `Excessive capitalization (${(features.capsRatio * 100).toFixed(0)}%)`,
+                        details: 'May be flagged as spam or low quality'
+                    });
+                    warnings.push(`⚠️ HIGH: Excessive caps (${(features.capsRatio * 100).toFixed(0)}%) - looks like spam`);
+                } else if (features.capsRatio > this.MAX_CAPS_RATIO) {
+                    const penalty = 15;
+                    score -= penalty;
+                    penalties.push({
+                        type: 'HIGH_CAPS',
+                        severity: 'MEDIUM',
+                        impact: `-${penalty}%`,
+                        description: `High capitalization (${(features.capsRatio * 100).toFixed(0)}%)`,
+                        details: 'Reduces perceived quality'
+                    });
+                    warnings.push(`⚠️ High caps ratio (${(features.capsRatio * 100).toFixed(0)}%) - reduce for better quality`);
+                }
+
+                // Newlines
+                if (features.newlineCount > 10) {
+                    const penalty = 20;
+                    score -= penalty;
+                    penalties.push({
+                        type: 'EXCESSIVE_NEWLINES',
+                        severity: 'MEDIUM',
+                        impact: `-${penalty}%`,
+                        description: `Excessive newlines (${features.newlineCount})`,
+                        details: 'May be flagged as spam'
+                    });
+                    warnings.push(`⚠️ Too many newlines (${features.newlineCount}) - may appear spammy`);
+                }
+
+                // Hashtags
+                if (features.hashtagCount > 5) {
+                    const penalty = 25;
+                    score -= penalty;
+                    penalties.push({
+                        type: 'HASHTAG_SPAM',
+                        severity: 'MEDIUM',
+                        impact: `-${penalty}%`,
+                        description: `Too many hashtags (${features.hashtagCount})`,
+                        details: 'Reduces engagement, looks spammy'
+                    });
+                    warnings.push(`⚠️ Too many hashtags (${features.hashtagCount}) - use 1-3 max`);
+                }
+
+                return [Math.max(score, 0), warnings, penalties];
+            }
+
+            analyzeEngagementPotential(features) {
+                let score = 50;
+                const boosts = [];
+
+                // Question boost
+                if (features.hasQuestion) {
+                    const boost = 15;
+                    score += boost;
+                    boosts.push({
+                        type: 'HAS_QUESTION',
+                        impact: `+${boost}%`,
+                        description: 'Question detected',
+                        details: 'Questions increase reply likelihood'
+                    });
+                }
+
+                // Media boost
+                if (features.hasMedia) {
+                    let boost = 20;
+                    let details = 'Media content boosts engagement';
+
+                    if (features.mediaType === 'video') {
+                        boost = 30;
+                        details = 'Video gets highest engagement';
+                    } else if (features.mediaType === 'gif') {
+                        boost = 20;
+                        details = 'GIFs boost engagement';
+                    } else if (features.mediaType === 'image') {
+                        boost = 25;
+                        details = 'Images significantly boost engagement';
+                    }
+
+                    score += boost;
+                    boosts.push({
+                        type: features.mediaType ? `${features.mediaType.toUpperCase()}_MEDIA` : 'MEDIA',
+                        impact: `+${boost}%`,
+                        description: features.mediaType ? `${features.mediaType.charAt(0).toUpperCase() + features.mediaType.slice(1)} content` : 'Media present',
+                        details
+                    });
+                }
+
+                // Optimal length
+                if (features.textLength >= this.SWEET_SPOT_MIN && features.textLength <= this.SWEET_SPOT_MAX) {
+                    const boost = 10;
+                    score += boost;
+                    boosts.push({
+                        type: 'OPTIMAL_LENGTH',
+                        impact: `+${boost}%`,
+                        description: `Optimal length (${features.textLength} chars)`,
+                        details: `Sweet spot: ${this.SWEET_SPOT_MIN}-${this.SWEET_SPOT_MAX} chars`
+                    });
+                }
+
+                // Good formatting
+                if (features.capsRatio <= this.RECOMMENDED_CAPS_RATIO) {
+                    const boost = 5;
+                    score += boost;
+                    boosts.push({
+                        type: 'GOOD_FORMATTING',
+                        impact: `+${boost}%`,
+                        description: 'Clean formatting',
+                        details: 'Appropriate capitalization'
+                    });
+                }
+
+                return [Math.min(score, 100), boosts];
+            }
+
+            calculateOverallScore(safetyScore, qualityScore, engagementScore, features) {
+                if (safetyScore < 50) {
+                    return safetyScore * 0.5;
+                }
+
+                let overall = (safetyScore * 0.4) + (qualityScore * 0.3) + (engagementScore * 0.3);
+                overall *= 0.85; // OON penalty
+
+                return overall;
+            }
+
+            determineRiskLevel(overallScore, safetyScore, safetyPenalties) {
+                const criticalPenalties = safetyPenalties.filter(p => p.severity === 'CRITICAL');
+                if (criticalPenalties.length > 0) return 'CRITICAL';
+                if (overallScore < 40) return 'HIGH';
+                if (overallScore < 60) return 'MEDIUM';
+                return 'LOW';
+            }
+
+            generateRecommendations(features, safetyScore, qualityScore, engagementScore, safetyPenalties, qualityPenalties) {
+                const recommendations = [];
+
+                if (safetyScore < 70) {
+                    recommendations.push('🚨 CRITICAL: Remove toxic/spam/NSFW language to avoid filters');
+                }
+                if (features.suspiciousUrls.length > 0) {
+                    recommendations.push('🔗 Replace shortened/suspicious URLs with direct links');
+                }
+                if (features.textLength < this.OPTIMAL_LENGTH_MIN) {
+                    recommendations.push(`📝 Expand your tweet to ${this.OPTIMAL_LENGTH_MIN}+ characters for better engagement`);
+                }
+                if (features.capsRatio > this.MAX_CAPS_RATIO) {
+                    recommendations.push('🔤 Reduce CAPITALIZATION - use sentence case instead');
+                }
+                if (features.hashtagCount > 3) {
+                    recommendations.push(`#️⃣ Reduce hashtags to 1-3 (currently ${features.hashtagCount})`);
+                }
+                if (features.newlineCount > 5) {
+                    recommendations.push('📄 Reduce excessive line breaks');
+                }
+                if (!features.hasQuestion && features.textLength > 50) {
+                    recommendations.push('❓ Consider adding a question to boost replies');
+                }
+                if (!features.hasMedia) {
+                    recommendations.push('📸 Add an image or video for +20-30% engagement boost');
+                }
+                if (features.textLength < this.SWEET_SPOT_MIN && features.textLength >= this.OPTIMAL_LENGTH_MIN) {
+                    recommendations.push(`💡 Sweet spot is ${this.SWEET_SPOT_MIN}-${this.SWEET_SPOT_MAX} chars for maximum engagement`);
+                }
+
+                if (recommendations.length === 0) {
+                    recommendations.push('✅ Looks good! This tweet should perform well.');
+                }
+
+                return recommendations;
+            }
+        }
+
+        // Analyze tweet function
+        function analyzeTweet() {
+            const text = document.getElementById('tweetText').value.trim();
+
+            if (!text) {
+                alert('Please enter some tweet text!');
+                return;
+            }
+
+            const hasMedia = document.getElementById('hasMedia').checked;
+            const mediaType = hasMedia ? document.getElementById('mediaType').value : null;
+            const isReply = document.getElementById('isReply').checked;
+
+            const analyzer = new EngagementAnalyzer();
+            const result = analyzer.analyze(text, hasMedia, mediaType, isReply);
+
+            displayResults(result);
+        }
+
+        function displayResults(result) {
+            const resultsDiv = document.getElementById('results');
+
+            const riskClass = result.riskLevel.toLowerCase();
+            const riskEmoji = {
+                'low': '✅',
+                'medium': '⚠️',
+                'high': '🔶',
+                'critical': '🚨'
+            };
+
+            let html = `
+                <div class="score-header ${riskClass}">
+                    <div class="overall-score">${result.overallScore}/100</div>
+                    <div class="risk-level">${riskEmoji[riskClass]} ${result.riskLevel} RISK</div>
+                </div>
+
+                <div class="score-breakdown">
+                    <div class="score-card">
+                        <h3>Safety Score</h3>
+                        <div class="score">${result.safetyScore}</div>
+                    </div>
+                    <div class="score-card">
+                        <h3>Quality Score</h3>
+                        <div class="score">${result.qualityScore}</div>
+                    </div>
+                    <div class="score-card">
+                        <h3>Engagement Score</h3>
+                        <div class="score">${result.engagementPotential}</div>
+                    </div>
+                </div>
+            `;
+
+            if (result.penalties.length > 0) {
+                html += `
+                    <div class="section">
+                        <h2>⚠️ Penalties Detected</h2>
+                `;
+                result.penalties.forEach(penalty => {
+                    html += `
+                        <div class="penalty-item ${penalty.severity.toLowerCase()}">
+                            <div class="item-header">
+                                <span class="item-title">[${penalty.severity}] ${penalty.type}</span>
+                                <span class="item-impact">${penalty.impact}</span>
+                            </div>
+                            <div class="item-description">${penalty.description}</div>
+                            ${penalty.details ? `<div class="item-details">ℹ️ ${penalty.details}</div>` : ''}
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+
+            if (result.boosts.length > 0) {
+                html += `
+                    <div class="section">
+                        <h2>✨ Engagement Boosts</h2>
+                `;
+                result.boosts.forEach(boost => {
+                    html += `
+                        <div class="boost-item">
+                            <div class="item-header">
+                                <span class="item-title">[+] ${boost.type}</span>
+                                <span class="item-impact">${boost.impact}</span>
+                            </div>
+                            <div class="item-description">${boost.description}</div>
+                            ${boost.details ? `<div class="item-details">ℹ️ ${boost.details}</div>` : ''}
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+
+            if (result.warnings.length > 0) {
+                html += `
+                    <div class="section">
+                        <h2>⚠️ Warnings</h2>
+                `;
+                result.warnings.forEach(warning => {
+                    html += `<div class="warning-item">${warning}</div>`;
+                });
+                html += `</div>`;
+            }
+
+            html += `
+                <div class="section">
+                    <h2>💡 Recommendations</h2>
+            `;
+            result.recommendations.forEach(rec => {
+                html += `<div class="recommendation-item">${rec}</div>`;
+            });
+            html += `</div>`;
+
+            html += `
+                <div class="section">
+                    <h2>📊 Content Analysis</h2>
+                    <div class="feature-grid">
+                        <div class="feature-item">
+                            <div class="feature-label">Length</div>
+                            <div class="feature-value">${result.featureBreakdown.textLength} chars</div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-label">Capitalization</div>
+                            <div class="feature-value">${(result.featureBreakdown.capsRatio * 100).toFixed(1)}%</div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-label">Questions</div>
+                            <div class="feature-value">${result.featureBreakdown.questionCount}</div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-label">URLs</div>
+                            <div class="feature-value">${result.featureBreakdown.urlCount}</div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-label">Mentions</div>
+                            <div class="feature-value">${result.featureBreakdown.mentionCount}</div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-label">Hashtags</div>
+                            <div class="feature-value">${result.featureBreakdown.hashtagCount}</div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-label">Media</div>
+                            <div class="feature-value">${result.featureBreakdown.hasMedia ? result.featureBreakdown.mediaType || 'Yes' : 'No'}</div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-label">Newlines</div>
+                            <div class="feature-value">${result.featureBreakdown.newlineCount}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            resultsDiv.innerHTML = html;
+            resultsDiv.classList.add('show');
+            resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Allow Enter key to analyze
+        document.getElementById('tweetText').addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                analyzeTweet();
+            }
+        });
+    </script>
+</body>
+</html>
